@@ -6,7 +6,7 @@ from collections import defaultdict
 def run_command(command):
     try:
         result = subprocess.run(command, shell=True, check=True, 
-stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return result.stdout.decode('utf-8').strip(), None
     except subprocess.CalledProcessError as e:
         return None, e.stderr.decode('utf-8').strip()
@@ -30,8 +30,7 @@ def get_and_remove_duplicate_branches(owner, repo, oauth_token):
                 remote_name = fork_owner.replace('.', '_')
 
                 # Add remote for the fork
-                _, error = run_command(f"git remote add {remote_name} 
-{fork['clone_url']}")
+                _, error = run_command(f"git remote add {remote_name} {fork['clone_url']}")
                 if error:
                     print(f"Error adding remote {remote_name}: {error}")
                     continue
@@ -39,41 +38,31 @@ def get_and_remove_duplicate_branches(owner, repo, oauth_token):
                 # Fetch all branches from the remote
                 _, error = run_command(f"git fetch {remote_name}")
                 if error:
-                    print(f"Error fetching branches from {remote_name}: 
-{error}")
+                    print(f"Error fetching branches from {remote_name}: {error}")
                     continue
 
                 # Get all branch names from the remote
-                stdout, error = run_command(f"git branch -r | grep 
-{remote_name}")
+                stdout, error = run_command(f"git branch -r | grep {remote_name}")
                 if error:
-                    print(f"Error listing branches for {remote_name}: 
-{error}")
+                    print(f"Error listing branches for {remote_name}: {error}")
                     continue
 
                 # Check out each branch and get the latest commit hash
                 for remote_branch in stdout.split('\n'):
-                    local_branch = 
-remote_branch.replace(f"{remote_name}/", "")
-                    _, error = run_command(f"git checkout -b 
-{local_branch} {remote_branch}")
+                    local_branch = remote_branch.replace(f"{remote_name}/", "")
+                    _, error = run_command(f"git checkout -b {local_branch} {remote_branch}")
                     if error:
-                        print(f"Error checking out {local_branch}: 
-{error}")
+                        print(f"Error checking out {local_branch}: {error}")
                         continue
 
                     # Get the latest commit hash of the branch
-                    commit_hash, error = run_command(f"git rev-parse 
-{local_branch}")
+                    commit_hash, error = run_command(f"git rev-parse {local_branch}")
                     if error:
-                        print(f"Error getting latest commit hash for 
-{local_branch}: {error}")
+                        print(f"Error getting latest commit hash for {local_branch}: {error}")
                         continue
 
-                    # Add the branch to the list of branches that have the 
-same commit hash
-                    branch_hashes[commit_hash].append((local_branch, 
-remote_name))
+                    # Add the branch to the list of branches that have the same commit hash
+                    branch_hashes[commit_hash].append((local_branch, remote_name))
 
             # Pagination check
             if 'next' in response.links:
@@ -92,8 +81,7 @@ remote_name))
             for local_branch, remote_name in branches[1:]:
                 _, error = run_command(f"git branch -D {local_branch}")
                 if error:
-                    print(f"Error deleting duplicate branch 
-{local_branch}: {error}")
+                    print(f"Error deleting duplicate branch {local_branch}: {error}")
                     continue
                 
                 _, error = run_command(f"git remote remove {remote_name}")
