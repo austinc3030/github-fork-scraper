@@ -1,4 +1,4 @@
-#!/bin/python3
+#!python3
 import subprocess
 import requests
 from collections import defaultdict
