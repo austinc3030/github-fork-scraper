@@ -6,12 +6,15 @@ import sys
 import os
 from collections import defaultdict
 
+
 def run_command(command):
     try:
-        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return result.stdout.decode('utf-8').strip(), None
     except subprocess.CalledProcessError as e:
         return None, e.stderr.decode('utf-8').strip()
+
 
 def get_oauth_token():
     home_dir = os.path.expanduser('~')
@@ -23,6 +26,7 @@ def get_oauth_token():
         print(f"OAuth token file not found in {token_file_path}")
         sys.exit(1)
 
+
 def get_github_username(oauth_token):
     headers = {'Authorization': f'token {oauth_token}'}
     response = requests.get("https://api.github.com/user", headers=headers)
@@ -32,10 +36,13 @@ def get_github_username(oauth_token):
         print(f"Failed to retrieve GitHub username: {response.status_code}")
         sys.exit(1)
 
+
 def create_or_update_origin_branch(local_branch):
     _, error = run_command(f"git push -u origin {local_branch}")
     if error:
-        print(f"Error creating or updating origin branch {local_branch}: {error}")
+        print(
+            f"Error creating or updating origin branch {local_branch}: {error}")
+
 
 def process_forks(base_url, session, my_username, branch_hashes, owner, repo):
     response = session.get(base_url)
@@ -48,7 +55,8 @@ def process_forks(base_url, session, my_username, branch_hashes, owner, repo):
 
             remote_name = fork_owner.replace('.', '_')
 
-            _, error = run_command(f"git remote add {remote_name} {fork['clone_url']}")
+            _, error = run_command(
+                f"git remote add {remote_name} {fork['clone_url']}")
             if error:
                 print(f"Error adding remote {remote_name}: {error}")
                 continue
@@ -64,16 +72,19 @@ def process_forks(base_url, session, my_username, branch_hashes, owner, repo):
                 continue
 
             for remote_branch in stdout.split('\n'):
-                #local_branch = remote_branch.replace(f"{remote_name}/", "")
+                # local_branch = remote_branch.replace(f"{remote_name}/", "")
                 local_branch = remote_branch
-                _, error = run_command(f"git checkout -b {local_branch} {remote_branch}")
+                _, error = run_command(
+                    f"git checkout -b {local_branch} {remote_branch}")
                 if error:
                     print(f"Error checking out {local_branch}: {error}")
                     continue
 
-                commit_hash, error = run_command(f"git rev-parse {local_branch}")
+                commit_hash, error = run_command(
+                    f"git rev-parse {local_branch}")
                 if error:
-                    print(f"Error getting latest commit hash for {local_branch}: {error}")
+                    print(
+                        f"Error getting latest commit hash for {local_branch}: {error}")
                     continue
 
                 branch_hashes[commit_hash].append((local_branch, remote_name))
@@ -83,12 +94,14 @@ def process_forks(base_url, session, my_username, branch_hashes, owner, repo):
 
             # Recursively process forks of this fork
             next_forks_url = fork['forks_url']
-            process_forks(next_forks_url, session, my_username, branch_hashes, owner, repo)
+            process_forks(next_forks_url, session, my_username,
+                          branch_hashes, owner, repo)
 
         if 'next' in response.links:
             response = session.get(response.links['next']['url'])
         else:
             break
+
 
 def get_and_remove_duplicate_branches(github_url):
     oauth_token = get_oauth_token()
@@ -111,12 +124,14 @@ def get_and_remove_duplicate_branches(github_url):
             for local_branch, remote_name in branches[1:]:
                 _, error = run_command(f"git branch -D {local_branch}")
                 if error:
-                    print(f"Error deleting duplicate branch {local_branch}: {error}")
+                    print(
+                        f"Error deleting duplicate branch {local_branch}: {error}")
                     continue
 
                 _, error = run_command(f"git remote remove {remote_name}")
                 if error:
                     print(f"Error removing remote {remote_name}: {error}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
